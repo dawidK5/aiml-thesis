@@ -1,0 +1,44 @@
+{
+    "os": "Windows-11-10.0.22631-SP0",
+    "python": "3.12.1",
+    "heartbeatAt": "2024-07-08T14:38:17.606876",
+    "startedAt": "2024-07-08T14:38:16.927208",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "<python with no main file>",
+    "codePathLocal": null,
+    "git": {
+        "remote": "https://github.com/dawidK5/aiml-thesis.git",
+        "commit": "6e853278a75796f9bfa137ec606a0ad75ca0b2b4"
+    },
+    "email": "19233116@studentmail.ul.ie",
+    "root": "C:/Users/gracz/OneDrive - University of Limerick/University/Masters/Sem2/Thesis/notebooks",
+    "host": "LAPTOP-HP",
+    "username": "gracz",
+    "executable": "c:\\Python312\\python.exe",
+    "cpu_count": 4,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 991.0,
+        "min": 0.0,
+        "max": 1190.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 991.0,
+            "min": 0.0,
+            "max": 1190.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 311.27636337280273,
+            "used": 194.7428207397461
+        }
+    },
+    "memory": {
+        "total": 7.7830047607421875
+    }
+}
