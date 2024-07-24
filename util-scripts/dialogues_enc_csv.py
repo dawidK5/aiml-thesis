@@ -2,8 +2,8 @@ import json
 import pandas as pd
 import polars as pl
 from tweet_sum_processor import TweetSumProcessor
-processor = TweetSumProcessor("./tweet_sum_data_files/archive/twcs/twcs.csv")
-with open("./tweet_sum_data_files/final_train_tweetsum.jsonl") as f:
+processor = TweetSumProcessor("./notebooks/util-scripts/tweet_sum_data_files/archive/twcs/twcs.csv")
+with open("./notebooks/util-scripts/tweet_sum_data_files/final_train_tweetsum.jsonl", encoding="utf-8") as f:
   dialog_with_summaries = processor.get_dialog_with_summaries(f.readlines())
   dials = []
   conv_ids = []
@@ -35,12 +35,13 @@ with open("./tweet_sum_data_files/final_train_tweetsum.jsonl") as f:
         dial_lines.append(l.strip().replace('\t',' '))
     if len(dial_lines) == 0:
       continue
-    dial = "[CLS] " + dial_lines[0] + " " + " [SEP] [CLS] ".join(dial_lines[1:]) + " [SEP]"
+    # dial = "[CLS] " + dial_lines[0] + " " + " [SEP] [CLS] ".join(dial_lines[1:]) + " [SEP]"
+    dial = " \n ".join(dial_lines)
     dials.append(dial)
     conv_ids.append(conv_id)
   
-df = pd.DataFrame({'conv_id': conv_ids, 'dialogue': dials}, columns=['conv_id','dialogue'])
+df = pd.DataFrame({'dialogue': dials}, columns=['dialogue'])
 df = df.convert_dtypes()
 print(df.dtypes)
 df_pl = pl.from_pandas(df)
-df_pl.write_csv('dials_2007_1226_train_sepcls_pl.csv', quote_style='non_numeric')
+df_pl.write_csv('dials_2307_1856_dials_nl.csv', include_header=False, quote_style='always')

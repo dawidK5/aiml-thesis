@@ -4,8 +4,8 @@ import json
 import pandas as pd
 import polars as pl
 from tweet_sum_processor import TweetSumProcessor
-processor = TweetSumProcessor("./tweet_sum_data_files/archive/twcs/twcs.csv")
-with open("./tweet_sum_data_files/final_train_tweetsum.jsonl") as f:
+processor = TweetSumProcessor("./notebooks/util-scripts/tweet_sum_data_files/archive/twcs/twcs.csv")
+with open("./.notebooks/util-scripts/tweet_sum_data_files/final_train_tweetsum.jsonl") as f:
   dialog_with_summaries = processor.get_dialog_with_summaries(f.readlines())
   ext_summs = []
   conv_ids = []
@@ -35,4 +35,5 @@ df = pd.DataFrame({'summary': ext_summs}, columns=['summary'])
 df = df.convert_dtypes()
 print(df.dtypes)
 df_pl = pl.from_pandas(df)
-df_pl.write_csv('extsums_2107_1240_train_raw.txt', include_header=False, quote_style='never')
+# df_pl.write_csv('extsums_2107_1240_train_raw.txt', include_header=False, quote_style='never')
+df_pl.write_csv('extsums_2207_2048_train.csv', include_header=False, quote_style='always')
