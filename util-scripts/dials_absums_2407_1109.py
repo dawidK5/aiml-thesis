@@ -1,5 +1,4 @@
 import pandas as pd
-import polars as pl
 from tweet_sum_processor import *
 
 
@@ -14,13 +13,13 @@ def dialogue_to_text(dial_obj: Dialog, add_newlines:bool = False) -> str:
     turn_line = role + " ".join(sents_t)
 
     if add_newlines:
-      sents_t[0] = (" \n " if (id_t != 0) else "") + role + sents_t[0]
-      sents_t = [ sent + " \n " if sent_id != len(sents_t) - 1 else sent for sent_id, sent in enumerate(sents_t)]
+      sents_t[0] = ("\n" if (id_t != 0) else "") + role + sents_t[0]
+      sents_t = [ sent + "\n" if sent_id != len(sents_t) - 1 else sent for sent_id, sent in enumerate(sents_t)]
       turn_line = "".join(sents_t)
     
     all_sents_dial.append(turn_line)
 
-  dial = " \n ".join(all_sents_dial)
+  dial = "\n".join(all_sents_dial)
   return dial
 
 
@@ -37,7 +36,7 @@ def ext_summary_to_text(ext_summ_obj: List[Turn]) -> str:
       
   cust_sents = [s.replace("\n","") for s in cust_sents]
   agent_sents = [s.replace("\n", "") for s in agent_sents]
-  all_sents_sum =  "Customer: " + " ".join(cust_sents) + " Agent: " + " ".join(agent_sents)
+  all_sents_sum =  "Customer: " + " ".join(cust_sents) + "\nAgent: " + " ".join(agent_sents)
   return all_sents_sum
 
 
@@ -48,8 +47,7 @@ def abs_summary_to_text(abs_summ_obj: List[str]) -> str:
 def main():
   import os
   DATA_DIR = os.path.join(os.getcwd(), 'data')
-  # os.path.join('tweet_sum_data_files', 'archive', 'twcs', 'twcs.csv'
-  processor = TweetSumProcessor("./util-scripts/tweet_sum_data_files/archive/twcs/twcs.csv")
+  processor = TweetSumProcessor("./util-scripts//tweet_sum_data_files/archive/twcs/twcs.csv")
   for data_split in ("train", "valid", "test"):
     dials = []
     ext_summs = []
@@ -85,11 +83,8 @@ def main():
     df_abs = df_abs.convert_dtypes()
     print(df_abs.dtypes)
 
-    df_pl_ext = pl.from_pandas(df_ext)
-    df_pl_abs = pl.from_pandas(df_abs)
-
-    df_pl_ext.write_csv(os.path.join(DATA_DIR, f"dials_ext_2407_1533_{data_split}_spc.csv"), include_header=True, quote_style='always')
-    df_pl_abs.write_csv(os.path.join(DATA_DIR, f"dials_abs_2407_1533_{data_split}_spc.csv"), include_header=True, quote_style='always')
+    df_ext.to_csv(os.path.join(DATA_DIR, f"dials_ext_2607_1312_{data_split}_spc.csv"), index=False, header=False, quoting=csv.QUOTE_ALL)
+    df_abs.to_csv(os.path.join(DATA_DIR, f"dials_abs_2607_1312_{data_split}_spc.csv"), index=False, header=False, quoting=csv.QUOTE_ALL)
 
 if __name__ == "__main__":
   main()
