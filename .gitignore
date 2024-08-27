@@ -1,2 +1,3 @@
 temp/
+__pycache__/
 data/tokenized_dials_bertsum/tokenized_dialogues
