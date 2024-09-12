@@ -54,9 +54,11 @@ def get_current_time():
 run_name = f"bart-abs-{get_current_time()}"
 
 # %%
-os.environ["WANDB_PROJECT"] = "aiml-thesis-train-test-temp"
+os.environ["WANDB_PROJECT"] = "aiml-thesis-train-bart-1109-1758"
 os.environ["WANDB_WATCH"] = "all"
-wandb.init(settings=wandb.Settings(start_method="thread"), id=run_name)
+BASE_PARAMS = {'lr':3e-5, 'batch_size':4, 'epochs': 6}
+wandb.init(id=run_name, config=BASE_PARAMS)
+# wandb.init(settings=wandb.Settings(start_method="thread"), id=run_name)
 
 # %%
 login(token=HF_TOKEN)
@@ -173,7 +175,6 @@ assert len(my_batch) == 4 # default setting for the model
 
 # %%
 EXPERIMENT_PARAMS = []
-BASE_PARAMS = {'lr':3e-5, 'batch_size':4, 'epochs': 6}
 EXPERIMENT_PARAMS.append(BASE_PARAMS)
 
 # %%
@@ -209,10 +210,10 @@ def run_post_training(split, test_details, test_df_temp: pd.DataFrame, tokenizer
     wandb.log({run_name_model: test_details.metrics})
     preds_name = f"{split}_preds_{run_name_model.replace('-','_')}_{epoch}_bart.csv"
     metrics_name =  f"{split}_metrics_{run_name_model.replace('-','_')}_{epoch}_bart.csv"
-    test_df_temp.to_csv(os.path.join(os.getcwd(), 'results', preds_name), index=False, header=False, encoding='utf-8', quoting=csv.QUOTE_ALL)
-    test_metrics_df.to_csv(os.path.join(os.getcwd(), 'results', metrics_name), index=False, header=True, encoding='utf-8', quoting=csv.QUOTE_ALL)
+    test_df_temp.to_csv(os.path.join(os.getcwd(), 'resultsbart', preds_name), index=False, header=False, encoding='utf-8', quoting=csv.QUOTE_ALL)
+    test_metrics_df.to_csv(os.path.join(os.getcwd(), 'resultsbart', metrics_name), index=False, header=True, encoding='utf-8', quoting=csv.QUOTE_ALL)
     # Using wandb documentation: https://docs.wandb.ai/guides/artifacts
-    for root, dirs, files in os.walk(os.path.join(os.getcwd(), 'results')):
+    for root, dirs, files in os.walk(os.path.join(os.getcwd(), 'resultsbart')):
         for file in files:
             artifact = wandb.Artifact(name=run_name_model, type="predictions")
             artifact.add_file(local_path=os.path.join(root, file), name=file)
@@ -221,29 +222,29 @@ def run_post_training(split, test_details, test_df_temp: pd.DataFrame, tokenizer
 
 # %%
 class ExtraCallback(TrainerCallback):
-    def __init__(self):
-        self.experiment_rows = []
+    # def __init__(self):
+    #     self.experiment_rows = []
         
 #     def on_log(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
 #         print(len(state.log_history), state.log_history)
 #         self.experiment_rows.append(state.log_history[-1])
 #         wandb.log({'run_name': args.run_name, **state.log_history[-1]})
         
-    def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
-        # Save loss from state, log current epoch to wandb
+    # def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+    #     # Save loss from state, log current epoch to wandb
         
-        # 'lr': args['learning_rate'], 'batch_size': args['per_device_train_batch_size'], 'max_epochs' args['num_train_epochs']
-        wandb.log({'run_name': args.run_name, **state.log_history[-1]})
+    #     # 'lr': args['learning_rate'], 'batch_size': args['per_device_train_batch_size'], 'max_epochs' args['num_train_epochs']
+    #     wandb.log({'run_name': args.run_name, **state.log_history[-1]})
 #         df = pd.DataFrame(self.experiment_rows)
 #         df = df.convert_dtypes()
-#         df.to_csv(os.path.join('.', 'results', args['run_name'] + ".csv", header=True, index=False))
+#         df.to_csv(os.path.join('.', 'resultsbart', args['run_name'] + ".csv", header=True, index=False))
     
     def on_train_end(self, args, state, control, **kwargs):
         # Save and upload CSVs
         df = pd.DataFrame(state.log_history)
         df = df.convert_dtypes()
-        df = df.groupby(['epoch'], as_index=False).mean()
-        df.to_csv(os.path.join('.', 'results', args.run_name + ".csv"), header=True, index=False)
+        df = df.groupby(['epoch'], as_index=False).sum()
+        df.to_csv(os.path.join('.', 'resultsbart', args.run_name + ".csv"), header=True, index=False)
         
         
 #         for split in ('train', 'validation', 'test'):
@@ -257,15 +258,17 @@ class ExtraCallback(TrainerCallback):
 exp_res = None
 for count, exp in enumerate(EXPERIMENT_PARAMS):
     current_time = get_current_time()
-    run_name_model = f"temp-bart-abs-{current_time}-lr-{exp['lr']}-bs-{exp['batch_size']}-maxep-{exp['epochs']}"
+    run_name_model = f"bart-abs-{current_time}-lr-{exp['lr']}-bs-{exp['batch_size']}-maxep-{exp['epochs']}"
     print("Starting experiment", count, run_name_model, "training")
     wandb.run.name = run_name_model
     wandb.run.save()
-
+    wandb.config.update({**exp})
     training_args = Seq2SeqTrainingArguments(
-        output_dir=os.path.join('.', run_model_name),
+        output_dir=os.path.join('.', 'models', run_name_model),
         eval_strategy="epoch",
         logging_strategy="epoch",
+        do_train=True,
+        do_eval=True,
         # logging_steps=100,
         learning_rate=exp['lr'],
         per_device_train_batch_size=exp['batch_size'],
@@ -281,8 +284,8 @@ for count, exp in enumerate(EXPERIMENT_PARAMS):
         fp16=True,
         generation_max_length=80,
         push_to_hub=False,
-        report_to="none",
-        run_name=run_name_model
+        report_to="wandb",
+        run_name=run_name_model,
     )
     trainer = Seq2SeqTrainer(
         model=model,
@@ -311,7 +314,7 @@ def log_csv_wandb(results_path, run_name_model):
 # !ls results
 
 # %%
-log_csv_wandb(os.path.join(os.getcwd(), 'results'), run_name_model)
+log_csv_wandb(os.path.join(os.getcwd(), 'resultsbart'), run_name_model)
 
 # %%
 print("Finished all training and evaluation for", run_name)
