@@ -2,8 +2,8 @@ import json
 import pandas as pd
 import polars as pl
 from tweet_sum_processor import TweetSumProcessor
-processor = TweetSumProcessor("./notebooks/util-scripts/tweet_sum_data_files/archive/twcs/twcs.csv")
-with open("./notebooks/util-scripts/tweet_sum_data_files/final_train_tweetsum.jsonl", encoding="utf-8") as f:
+processor = TweetSumProcessor("./notebooks/util_scripts/tweet_sum_data_files/archive/twcs/twcs.csv")
+with open("./notebooks/util_scripts/tweet_sum_data_files/final_train_tweetsum.jsonl", encoding="utf-8") as f:
   dialog_with_summaries = processor.get_dialog_with_summaries(f.readlines())
   dials = []
   conv_ids = []

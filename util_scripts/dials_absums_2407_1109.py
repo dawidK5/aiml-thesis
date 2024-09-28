@@ -47,7 +47,7 @@ def abs_summary_to_text(abs_summ_obj: List[str]) -> str:
 def main():
   import os
   DATA_DIR = os.path.join(os.getcwd(), 'data')
-  processor = TweetSumProcessor("./util-scripts//tweet_sum_data_files/archive/twcs/twcs.csv")
+  processor = TweetSumProcessor("./util_scripts//tweet_sum_data_files/archive/twcs/twcs.csv")
   for data_split in ("train", "valid", "test"):
     dials = []
     ext_summs = []
@@ -55,7 +55,7 @@ def main():
     conv_ids = []
     skipped_dialogues = []
 
-    with open(f"./util-scripts/tweet_sum_data_files/final_{data_split}_tweetsum.jsonl") as f:
+    with open(f"./util_scripts/tweet_sum_data_files/final_{data_split}_tweetsum.jsonl") as f:
       dialogues_with_summaries = processor.get_dialog_with_summaries(f.readlines())
       
       for dialogue_with_summary in dialogues_with_summaries:
