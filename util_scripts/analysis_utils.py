@@ -38,9 +38,7 @@ class AnalysisUtils:
                     # multi bar plots
                     test_metrics[file] = pd.read_csv(os.path.join(root, file))
         exp_epochs = dict(sorted(exp_epochs.items(), key=lambda x: self.get_params_from_name(x[0])))
-        # print(list(exp_epochs.keys()))
         test_metrics = dict(sorted(test_metrics.items(), key=lambda x: self.get_params_from_name(x[0])))
-        # print(list(test_metrics.keys()))
         return exp_epochs, test_metrics
 
     def get_params_from_name(self, file):
@@ -54,7 +52,6 @@ class AnalysisUtils:
             batch_size = int(match.group(2))
             max_epoch = int(match.group(3))
             step = int(match.group(4)) if 'metrics' in file else int(0)
-            # print(f"lr: {lr}, batch_size: {batch_size}, max_epoch: {max_epoch}")
             return lr, batch_size, max_epoch, step
         except AttributeError:
             print(file, "not matched with regex")
@@ -69,7 +66,40 @@ class AnalysisUtils:
             short_name = self.params_to_shortname(lr, bs, ep, step)
             print(short_name, '\t', [f"{res_df[k].values[0]:.2f}"for k in col_to_label.keys()][0])
 
-    def metrics_columns_to_names(self, file_to_df, model_name, metrics, blue=False, detailed=False):
+    def rename_column(self, col_name):
+        return col_name.replace('test_', '').split('/')[-1]
+    
+    def rename_columns_best(self, orig_col_names):
+        bart_maps = dict()
+        for cn in orig_col_names:
+            col = self.rename_column(cn)
+            col = re.sub(r'rouge([12Lsum]+)', r'rouge\1_re', col)
+            col = col.replace('-','_').replace('precision','pr').replace('recall', 're')
+            bart_maps[cn] = col
+        return bart_maps
+    
+    def best_models_comp(self, models_list, model_names):
+        plt.figure(figsize=(10, 5))
+        bar_width = 0.2
+        values = []
+        metric_ind = np.arange(len(models_list[0].keys()))
+        for model_index, model in enumerate(models_list):
+            for _, score in model.items():
+                values.append(score)
+            x = len(values)
+            tick_locs = metric_ind + model_index*bar_width
+            plt.bar(tick_locs, model.values(), bar_width, label=model_names[model_index]) # , color=colours[idx])
+
+        
+        plt.title(f"Comparison of Best Model Metrics on Test Set")
+        plt.xlabel('Models')
+        plt.xticks(tick_locs, labels=model.keys(), rotation=70, ha='right')
+        plt.ylabel('Metric scores')
+        plt.legend(loc='right')
+        # plt.tight_layout()
+        plt.show()
+
+    def metrics_columns_to_names(self, file_to_df, model_name, metrics, blue=False, detailed=False, noparams=False):
         plt.figure(figsize=(10, 5))
         colours = ['gold','orange','red', 'purple']
         if blue:
@@ -90,23 +120,25 @@ class AnalysisUtils:
             values = []
             for df in file_to_df.values():
                 values.append(df[metric].values[0])
-            plt.bar(x + idx*bar_width, values, width=bar_width, label=metric.replace('test_', '').split('/')[-1], color=colours[idx])
+            plt.bar(x + idx*bar_width, values, width=bar_width, label=self.rename_column(metric), color=colours[idx])
         
         plt.title(f"{model_name} Metrics on Test Set")
         plt.xlabel('Models')
         exp_names = []
-        for k in file_to_df.keys():
-            lr, bs, ep, step = self.get_params_from_name(k)
-            exp_names.append(f"lr:{lr} bs:{bs} ep:{ep} st:{step}") 
+        if not noparams:
+            for k in file_to_df.keys():
+                lr, bs, ep, step = self.get_params_from_name(k)
+                exp_names.append(f"lr:{lr} bs:{bs} ep:{ep} st:{step}")
+        else:
+            exp_names = file_to_df.keys()
         plt.xticks(x + bar_width, labels=exp_names, rotation=70, ha='right')
         plt.ylabel('Metric scores')
         plt.legend(loc='right')
-        # plt.tight_layout()
+
         plt.show()
 
     def plot_loss(self, df_dict: dict[str, pd.DataFrame]):
-        # training vs evaluation loss for each experiment
-        #get keys
+
         lrs = set()
         batch_sizes = set()
         max_epochs = set()
@@ -130,11 +162,9 @@ class AnalysisUtils:
                 ax = axes[batch_sizes.index(bs)]
                 ax.plot(df["epoch"], np.log10(df["loss"] + 1), label=f"Train, lr {lr}", linestyle='--', marker='o')
                 ax.plot(df["epoch"], np.log10(df["eval_loss"] + 1), label=f"Validation, lr {lr}", marker='s')
-                # ax.set_yscale('symlog', linthresh=1e-5)
                 ax.set_xlabel("Epoch")
                 ax.set_ylabel("Log10 loss offset 1")
                 ax.legend(loc='right')
-                # ax.set_ylim(0, 3)
                 ax.set_title(f"Batch size {bs}")
         figure.tight_layout(pad=1)
         plt.show()
@@ -142,6 +172,13 @@ class AnalysisUtils:
     def shorten_metric(self, full_metric_name):
         return full_metric_name.split('/')[-1].replace('test_', '').replace('precision', 'pr').replace('recall', 're').replace('bertscore', 'bert')
 
+    def print_table_comparison(self, models_list, model_names):
+        metrics = models_list[0].keys()
+        
+        print(f"{'Model':>10}", "\t", "\t".join(metrics))
+        for model, name in zip(models_list, model_names):
+            print(f"{name:>10}", "\t", "\t".join([f"{model[k]:.4f}  " for k in metrics]))
+        
     def best_scores_table(self, files_to_df, metrics):
         print("Model", '\t\t\t\t', "\t".join([self.shorten_metric(m) for m in metrics]))
         for name, df in files_to_df.items():
@@ -149,9 +186,10 @@ class AnalysisUtils:
             short_name = self.params_to_shortname(lr, bs, ep, step)
             print(short_name, '\t', "\t".join([f"{df[k].values[0]:.4f}" for k in metrics]))
 
-    def get_best_metric(self, lr_best, bs_best, ep_best, test_metrics):
+    def get_best_metric(self, lr_best, bs_best, ep_best, test_metrics)->str:
+        best_name = ""
         for k in test_metrics.keys():
-            for (lr, bs, ep) in self.get_params_from_name(k):
-                if lr == lr_best and bs == bs_best and ep == ep_best:
-                    best_name = k
+            lr, bs, ep, _ = self.get_params_from_name(k)
+            if lr == lr_best and bs == bs_best and ep == ep_best:
+                best_name = k
         return best_name

@@ -8,25 +8,11 @@ with open("./notebooks/util_scripts/tweet_sum_data_files/final_train_tweetsum.js
   dials = []
   conv_ids = []
   for dialog_with_summary in dialog_with_summaries:
-#     print(dialog_with_summary)
-#     break
-# print("987")
-
-    # turns = dialog_with_summary.get_dialog().get_turns()
-    # sents = []
-    # for turn in turns:
-    #   turn.g
-    #   dial = " ".join(turn.get_sentences())
-    #   print(dial)
     json_format = dialog_with_summary.get_json()
     string_format = str(dialog_with_summary)
-    # print(string_format)
-    # print(dir(json_format), type(json_format), json_format, sep='\n')
-    # print(type(string_format), string_format, sep='\n')
     lines = string_format.splitlines()
     conv_id = lines[0]
     dial_lines = []
-    # print(len(lines))
     ct = 0
     for idx, l in enumerate(lines[1:]):
       if l.startswith("Extractive"):

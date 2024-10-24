@@ -1,2 +1,0 @@
-"lr","batch_size","epochs","test_loss","test_rouge/rouge1","test_rouge/rouge2","test_rouge/rougeL","test_rouge/rougeLsum","test_bertscore/bertscore-precision","test_bertscore/bertscore-recall","test_bertscore/bertscore-f1","test_meteor","test_gen_len","test_runtime","test_samples_per_second","test_steps_per_second"
-"3e-06","4","6","5.9315571784973145","0.2603","0.0554","0.187","0.187","0.8468","0.8545","0.8505","0.2685","55","45.1475","2.414","0.62"
